@@ -1,0 +1,48 @@
+---
+- name: Jenkins Server Installation
+  hosts: jenkins_grp
+
+  tasks:
+  - name: Define IGW as default (to reach the Internet)
+    ansible.builtin.shell: ip route replace 0.0.0.0/0 via 10.126.213.204 dev eth0
+
+  - name: Add Jenkins repository
+    block: 
+      - name: Get Jenkins repository key
+        ansible.builtin.get_url:
+          url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+          dest: /usr/share/keyrings/jenkins-keyring.asc
+
+      - name: Add repository into sources list
+        ansible.builtin.apt_repository:
+          repo: deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/
+          state: present
+          filename: jenkins
+
+  - name: Update and upgrade apt packages
+    become: true
+    apt:
+      upgrade: yes
+      update_cache: yes
+
+  - name : Install Java package as Jenkins prerequisite
+    ansible.builtin.apt:
+      pkg:
+      - fontconfig
+      - openjdk-17-jre
+
+  - name: Install Jenkins package
+    ansible.builtin.apt:
+      name: jenkins
+      state: present
+
+  - name: Enable Jenkins service
+    ansible.builtin.service:
+      name: jenkins
+      enabled: true
+
+  - name: Start Jenkins service
+    ansible.builtin.service:
+      name: jenkins
+      state: started
+
