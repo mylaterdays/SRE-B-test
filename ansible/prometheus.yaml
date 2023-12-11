@@ -1,0 +1,109 @@
+---
+- name: Supervision Server Installation
+  hosts: supervision_grp
+
+  tasks:
+  - name: Define IGW as default (to reach the Internet)
+    ansible.builtin.shell: ip route replace 0.0.0.0/0 via 10.126.213.204 dev eth0
+
+  - name: Add service account for prometheus
+    ansible.builtin.user:
+      name: prometheus
+      create_home: false
+      shell: /bin/false
+
+  - name : Prepare installation path right
+    ansible.builtin.file:
+      path: /etc/prometheus
+      state: directory
+      group: prometheus
+      owner : prometheus
+
+  - name : Prepare installation path and right suite
+    ansible.builtin.file:
+      path: /var/lib/prometheus
+      state: directory
+      group: prometheus
+      owner : prometheus
+
+  - name : Download Promethus package
+    ansible.builtin.get_url:
+      url: https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz
+      dest: /tmp/
+
+  - name : Uncompress the package
+    ansible.builtin.unarchive:
+      src: /tmp/prometheus-2.37.0.linux-amd64.tar.gz
+      remote_src: yes
+      dest: /tmp/
+
+  - name : Move binaries to destination path and update rights
+    ansible.builtin.copy:
+      src: /tmp/prometheus-2.37.0.linux-amd64/promtool
+      remote_src: yes
+      dest: /usr/local/bin/
+      owner: prometheus
+      group: prometheus
+
+  - name : Move binaries to destination path and update rights
+    ansible.builtin.copy:
+      src: /tmp/prometheus-2.37.0.linux-amd64/prometheus
+      remote_src: yes
+      dest: /usr/local/bin/
+      owner: prometheus
+      group: prometheus
+
+  - name : Copy binaries to destiantion pths and update rights
+    ansible.builtin.copy:
+      src : /tmp/prometheus-2.37.0.linux-amd64/consoles
+      remote_src: yes
+      dest: /etc/prometheus
+      owner: prometheus
+      group: prometheus
+
+  - name : Copy binaries to destiantion pths and update rights
+    ansible.builtin.copy:
+      src : /tmp/prometheus-2.37.0.linux-amd64/consoles
+      remote_src: yes
+      dest: /etc/prometheus
+      owner: prometheus
+      group: prometheus
+
+
+  - name : Copy binaries to destiantion pths and update rights
+    ansible.builtin.copy:
+      src : /tmp/prometheus-2.37.0.linux-amd64/console_libraries
+      remote_src: yes
+      dest: /etc/prometheus
+      owner: prometheus
+      group: prometheus
+
+  - name : Remove source
+    ansible.builtin.file:
+      path: /tmp/prometheus-2.37.0.linux-amd64.tar.gz
+      state: absent
+
+  - name : Remove source folder extracted
+    ansible.builtin.file:
+      path: /tmp/prometheus-2.37.0.linux-amd64
+      state: absent
+
+  - name : Change Prometheus default port to avoid problem with others modules
+    ansible.builtin.copy:
+      src: ./prometheus_conf_file/prometheus.yml
+      dest: /etc/prometheus/
+
+  - name : Mise en place du service prometheus
+    ansible.builtin.copy:
+      src: ./prometheus_conf_file/prometheus.service
+      dest: /etc/systemd/system/
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl daemon-reload
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl start prometheus
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl status prometheus
+
