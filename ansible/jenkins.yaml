@@ -46,3 +46,33 @@
       name: jenkins
       state: started
 
+  - name: Get JFrog repository key
+    ansible.builtin.apt_key:
+      url: https://releases.jfrog.io/artifactory/api/gpg/key/public
+      state: present
+
+  - name: Add JFrog repository into sources list
+    ansible.builtin.apt_repository:
+      repo: deb https://releases.jfrog.io/artifactory/artifactory-debs jammy main
+      state: present
+
+  - name : Install Jfrog prerequisite
+    ansible.builtin.apt:
+      pkg:
+      - wget
+      - software-properties-common
+
+  - name: Install Jfrog package
+    ansible.builtin.apt:
+      name: jfrog-artifactory-oss
+      state: present
+
+  - name: Enable JFrog service
+    ansible.builtin.service:
+      name: artifactory
+      enabled: true
+
+  - name: Start JFrog service
+    ansible.builtin.service:
+      name: artifactory
+      state: started
