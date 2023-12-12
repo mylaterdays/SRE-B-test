@@ -1,0 +1,58 @@
+---
+- name: Supervision Server Installation - Node_exporter
+  hosts: all
+  tasks:
+  - name: Add service account for node_exporter
+    ansible.builtin.user:
+      name: node_exporter
+      create_home: false
+      shell: /bin/false
+
+  - name : Download Promethus package
+    ansible.builtin.get_url:
+      url: https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
+      dest: /tmp/
+
+  - name : Uncompress the package
+    ansible.builtin.unarchive:
+      src: /tmp/node_exporter-1.3.1.linux-amd64.tar.gz
+      remote_src: yes
+      dest: /tmp/
+
+  - name : Move binaries to destination path and update rights
+    ansible.builtin.copy:
+      src: /tmp/node_exporter-1.3.1.linux-amd64/node_exporter
+      remote_src: yes
+      dest: /usr/local/bin
+      owner: node_exporter
+      group: node_exporter
+
+  - name : Remove source
+    ansible.builtin.file:
+      path: /tmp/node_exporter-1.3.1.linux-amd64.tar.gz
+      state: absent
+
+  - name : Remove source folder extracted
+    ansible.builtin.file:
+      path: /tmp/node_exporter-1.3.1.linux-amd64
+      state: absent
+
+  - name: Change file ownership, group and permissions
+    ansible.builtin.file:
+      path: /usr/local/bin/node_exporter
+      mode: '0775'
+
+  - name : Mise en place du service node_exporter
+    ansible.builtin.copy:
+      src: ./prometheus_conf_file/node_exporter.service
+      dest: /etc/systemd/system/
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl daemon-reload
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl start node_exporter
+
+  - name : Relance du systemctl pour prendre en charge le nouveau service
+    ansible.builtin.command: sudo systemctl status node_exporter
+
